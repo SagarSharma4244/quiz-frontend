@@ -30,7 +30,7 @@ export default function QuizPage({ params }: QuizPageProps) {
     getTopic(topicId)
       .then((t) => {
         setTopic(t);
-        return getTopics(t.sectorId);
+        return getTopics(t.subjectId);
       })
       .then((topicList) => {
         setTopics(topicList);
