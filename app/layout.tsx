@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Quiz App",
-  description: "Choose a sector, pick a topic, and take a quiz",
+  description: "Choose a subject, pick a topic, and take a quiz",
 };
 
 export default function RootLayout({

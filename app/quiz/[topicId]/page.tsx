@@ -1,9 +1,12 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
-import { getTopic, getQuestions, type Topic, type QuizQuestion } from "@/lib/api";
+import QuestionCard from "../components/QuestionCard";
+import QuizCompletion from "../components/QuizCompletion";
+import PageError from "../components/PageError";
+import { getTopic, getTopics, getQuestions, type Topic, type QuizQuestion } from "@/lib/api";
 
 interface QuizPageProps {
   params: Promise<{ topicId: string }>;
@@ -12,6 +15,7 @@ interface QuizPageProps {
 export default function QuizPage({ params }: QuizPageProps) {
   const { topicId } = use(params);
   const [topic, setTopic] = useState<Topic | null>(null);
+  const [topics, setTopics] = useState<Topic[]>([]);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,23 +24,36 @@ export default function QuizPage({ params }: QuizPageProps) {
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
 
+  const router = useRouter();
+
   useEffect(() => {
-    setLoading(true);
-    Promise.all([getTopic(topicId), getQuestions(topicId)])
-      .then(([t, qs]) => {
+    getTopic(topicId)
+      .then((t) => {
         setTopic(t);
+        return getTopics(t.sectorId);
+      })
+      .then((topicList) => {
+        setTopics(topicList);
+        return getQuestions(topicId);
+      })
+      .then((qs) => {
         setQuestions(qs);
       })
-      .catch(console.error)
+      .catch((err) => {
+        console.error(err);
+      })
       .finally(() => setLoading(false));
   }, [topicId]);
 
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
 
-  const handleOptionSelect = (optionIndex: number) => {
+  const currentTopicIndex = topics.findIndex((t) => t.id === topicId);
+  const nextTopic = currentTopicIndex >= 0 && currentTopicIndex + 1 < topics.length ? topics[currentTopicIndex + 1] : null;
+
+  const handleOptionSelect = (index: number) => {
     if (showResult) return;
-    setSelectedOption(optionIndex);
+    setSelectedOption(index);
   };
 
   const handleSubmit = () => {
@@ -49,151 +66,96 @@ export default function QuizPage({ params }: QuizPageProps) {
   };
 
   const handleNext = () => {
+    if (isLastQuestion) {
+      return;
+    }
     setCurrentIndex((i) => i + 1);
     setSelectedOption(null);
     setShowResult(false);
   };
 
-  const handleFinish = () => {
+  const handleRetake = () => {
     setCurrentIndex(0);
     setSelectedOption(null);
     setShowResult(false);
     setScore(0);
   };
 
+  // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-zinc-950">
+      <div className="min-h-screen bg-white">
         <Header />
         <main className="mx-auto max-w-2xl px-6 py-16">
-          <p className="text-zinc-600 dark:text-zinc-400">Loading quiz...</p>
+          <p className="text-zinc-600">Loading quiz...</p>
         </main>
       </div>
     );
   }
 
+  // Error states
   if (!topic) {
     return (
-      <div className="min-h-screen bg-white dark:bg-zinc-950">
+      <div className="min-h-screen bg-white">
         <Header />
-        <main className="mx-auto max-w-6xl px-6 py-16">
-          <p className="text-zinc-600 dark:text-zinc-400">Topic not found.</p>
-          <Link href="/" className="mt-4 inline-block text-zinc-600 underline dark:text-zinc-400">
-            Back to home
-          </Link>
-        </main>
+        <PageError message="Topic not found." backLink="/" backLinkLabel="Back to home" />
       </div>
     );
   }
 
   if (questions.length === 0) {
     return (
-      <div className="min-h-screen bg-white dark:bg-zinc-950">
+      <div className="min-h-screen bg-white">
         <Header />
-        <main className="mx-auto max-w-6xl px-6 py-16">
-          <p className="text-zinc-600 dark:text-zinc-400">No quiz questions for this topic yet.</p>
-          <Link href={`/sector/${topic.sectorId}`} className="mt-4 inline-block text-zinc-600 underline dark:text-zinc-400">
-            Back to topics
-          </Link>
-        </main>
+        <PageError
+          message="No quiz questions for this topic yet."
+          backLink="/"
+          backLinkLabel="Back to topics"
+        />
       </div>
     );
   }
 
-  const getOptionClass = (index: number) => {
-    const base =
-      "block w-full rounded-lg border px-4 py-3 text-left text-base transition-colors";
-    if (!showResult) {
-      return `${base} cursor-pointer border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600 dark:hover:bg-zinc-800 ${
-        selectedOption === index
-          ? "border-zinc-500 ring-2 ring-zinc-500 dark:border-zinc-400 dark:ring-zinc-400"
-          : ""
-      }`;
+  const isQuizComplete = showResult && isLastQuestion;
+
+  const handleNextTopic = () => {
+    if (nextTopic) {
+      router.push(`/quiz/${nextTopic.id}`);
     }
-    if (index === currentQuestion.correctIndex) {
-      return `${base} border-green-500 bg-green-50 dark:border-green-600 dark:bg-green-950/50`;
-    }
-    if (index === selectedOption && index !== currentQuestion.correctIndex) {
-      return `${base} border-red-500 bg-red-50 dark:border-red-600 dark:bg-red-950/50`;
-    }
-    return `${base} border-zinc-200 bg-zinc-50 opacity-60 dark:border-zinc-700 dark:bg-zinc-900/50`;
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
-      <main className="mx-auto max-w-2xl px-6 py-16">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
-            {topic.name} Quiz
-          </h1>
-          <span className="text-sm text-zinc-500 dark:text-zinc-400">
-            Question {currentIndex + 1} of {questions.length}
-          </span>
+      <main className="flex">
+        {/* <QuizSidebar /> */}
+
+        <div className="flex-1">
+          <div className="mx-auto max-w-4xl px-8 py-8 ">
+            {/* <ChapterProgress topicName={topic.name} /> */}
+
+            {isQuizComplete ? (
+              <QuizCompletion
+                score={score}
+                totalQuestions={questions.length}
+                onRetake={handleRetake}
+                onNextChapter={nextTopic ? handleNextTopic : undefined}
+                hasNextChapter={nextTopic !== null}
+              />
+            ) : (
+              <QuestionCard
+                question={currentQuestion}
+                currentIndex={currentIndex}
+                totalQuestions={questions.length}
+                selectedOption={selectedOption}
+                showResult={showResult}
+                onSelectOption={handleOptionSelect}
+                onSubmit={handleSubmit}
+                onNext={handleNext}
+              />
+            )}
+          </div>
         </div>
-
-        {showResult && isLastQuestion ? (
-          <div className="rounded-xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-            <h2 className="mb-4 text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-              Quiz Complete!
-            </h2>
-            <p className="mb-6 text-lg text-zinc-600 dark:text-zinc-400">
-              Your score: {score} / {questions.length}
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <button
-                onClick={handleFinish}
-                className="rounded-lg bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-              >
-                Retake Quiz
-              </button>
-              <Link
-                href={`/sector/${topic.sectorId}`}
-                className="rounded-lg border border-zinc-300 px-4 py-2 font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
-              >
-                Back to Topics
-              </Link>
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-            <h2 className="mb-6 text-lg font-medium text-zinc-900 dark:text-zinc-100">
-              {currentQuestion.question}
-            </h2>
-            <ul className="space-y-3">
-              {currentQuestion.options.map((option, index) => (
-                <li key={index}>
-                  <button
-                    type="button"
-                    onClick={() => handleOptionSelect(index)}
-                    className={getOptionClass(index)}
-                  >
-                    {String.fromCharCode(65 + index)}. {option}
-                  </button>
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-8 flex justify-end gap-4">
-              {showResult ? (
-                <button
-                  onClick={handleNext}
-                  className="rounded-lg bg-zinc-900 px-5 py-2.5 font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                >
-                  Next Question
-                </button>
-              ) : (
-                <button
-                  onClick={handleSubmit}
-                  disabled={selectedOption === null}
-                  className="rounded-lg bg-zinc-900 px-5 py-2.5 font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                >
-                  Submit
-                </button>
-              )}
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );
