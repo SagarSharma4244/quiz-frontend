@@ -10,6 +10,14 @@ export default function Header() {
         >
           TechGym
         </Link>
+        <nav className="flex items-center gap-4">
+          <Link
+            href="/upload"
+            className="text-sm font-medium text-zinc-600 hover:text-zinc-900"
+          >
+            Upload
+          </Link>
+        </nav>
       </div>
     </header>
   );
