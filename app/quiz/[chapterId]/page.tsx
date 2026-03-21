@@ -5,17 +5,17 @@ import Header from "@/components/Header";
 import QuestionCard from "../components/QuestionCard";
 import QuizCompletion from "../components/QuizCompletion";
 import PageError from "../components/PageError";
-import { getTopic, getTopics, getQuestions, type Topic, type QuizQuestion } from "@/lib/api";
+import { getChapter, getChapters, getQuestions, type Chapter, type QuizQuestion } from "@/lib/api";
 
 
 interface QuizPageProps {
-  params: Promise<{ topicId: string }>;
+  params: Promise<{ chapterId: string }>;
 }
 
 export default function QuizPage({ params }: QuizPageProps) {
-  const { topicId } = use(params);
-  const [topic, setTopic] = useState<Topic | null>(null);
-  const [topics, setTopics] = useState<Topic[]>([]);
+  const { chapterId } = use(params);
+  const [chapter, setChapter] = useState<Chapter | null>(null);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,14 +25,14 @@ export default function QuizPage({ params }: QuizPageProps) {
   const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
-    getTopic(topicId)
-      .then((t) => {
-        setTopic(t);
-        return getTopics(t.subjectId);
+    getChapter(chapterId)
+      .then((c) => {
+        setChapter(c);
+        return getChapters(c.subjectId);
       })
-      .then((topicList) => {
-        setTopics(topicList);
-        return getQuestions(topicId);
+      .then((chapterList) => {
+        setChapters(chapterList);
+        return getQuestions(chapterId);
       })
       .then((qs) => {
         setQuestions(qs);
@@ -41,7 +41,7 @@ export default function QuizPage({ params }: QuizPageProps) {
         console.error(err);
       })
       .finally(() => setLoading(false));
-  }, [topicId]);
+  }, [chapterId]);
 
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
@@ -54,7 +54,6 @@ export default function QuizPage({ params }: QuizPageProps) {
 
   const handleSubmit = () => {
     if (selectedOption === null || !currentQuestion) return;
-
     setShowResult(true);
   };
 
@@ -68,7 +67,6 @@ export default function QuizPage({ params }: QuizPageProps) {
     setShowResult(false);
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
@@ -80,12 +78,11 @@ export default function QuizPage({ params }: QuizPageProps) {
     );
   }
 
-  // Error states
-  if (!topic) {
+  if (!chapter) {
     return (
       <div className="min-h-screen bg-white">
         <Header />
-        <PageError message="Topic not found." backLink="/" backLinkLabel="Back to home" />
+        <PageError message="Chapter not found." backLink="/" backLinkLabel="Back to home" />
       </div>
     );
   }
@@ -95,30 +92,25 @@ export default function QuizPage({ params }: QuizPageProps) {
       <div className="min-h-screen bg-white">
         <Header />
         <PageError
-          message="No quiz questions for this topic yet."
+          message="No quiz questions for this chapter yet."
           backLink="/"
-          backLinkLabel="Back to topics"
+          backLinkLabel="Back to home"
         />
       </div>
     );
   }
 
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
       <main className="flex">
-        {/* <QuizSidebar /> */}
-
         <div className="flex-1">
-          <div className="mx-auto max-w-4xl px-8 py-8 ">
-            {/* <ChapterProgress topicName={topic.name} /> */}
-
+          <div className="mx-auto max-w-4xl px-8 py-8">
             {isComplete ? (
               <QuizCompletion
-                topics={topics}
-                currentTopicId={topicId}
-                chapterName={topic.name}
+                chapters={chapters}
+                currentChapterId={chapterId}
+                chapterName={chapter.name}
               />
             ) : (
               <QuestionCard
@@ -130,7 +122,7 @@ export default function QuizPage({ params }: QuizPageProps) {
                 onSelectOption={handleOptionSelect}
                 onSubmit={handleSubmit}
                 onNext={handleNext}
-                chapterName={topic.name}
+                chapterName={chapter.name}
               />
             )}
           </div>

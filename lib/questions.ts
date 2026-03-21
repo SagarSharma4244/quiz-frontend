@@ -2,7 +2,7 @@ import { apiFetch } from "./apiBase";
 
 export interface QuizQuestion {
   id: string;
-  topicId: string;
+  chapterId: string;
   question: string;
   options: string[];
   correctIndex: number;
@@ -26,7 +26,7 @@ interface BackendQuestion {
 
 const mapBackendQuestion = (q: BackendQuestion): QuizQuestion => ({
   id: q.id,
-  topicId: q.chapterId,
+  chapterId: q.chapterId,
   question: q.title,
   options: q.options,
   correctIndex: q.answer,
@@ -37,15 +37,15 @@ const mapBackendQuestion = (q: BackendQuestion): QuizQuestion => ({
 });
 
 export function validateQuestionPayload(data: {
-  topicId: string;
+  chapterId: string;
   question: string;
   options: string[];
   correctIndex: number;
 }) {
   const errors: string[] = [];
 
-  if (!data.topicId?.trim()) {
-    errors.push("topicId is required");
+  if (!data.chapterId?.trim()) {
+    errors.push("chapterId is required");
   }
 
   if (!data.question?.trim()) {
@@ -110,8 +110,8 @@ export function validateQuestionUpdatePayload(data: {
   };
 }
 
-export async function getQuestions(topicId?: string): Promise<QuizQuestion[]> {
-  const query = topicId ? `?chapterId=${encodeURIComponent(topicId)}` : "";
+export async function getQuestions(chapterId?: string): Promise<QuizQuestion[]> {
+  const query = chapterId ? `?chapterId=${encodeURIComponent(chapterId)}` : "";
   const questions = await apiFetch<BackendQuestion[]>(`/api/questions${query}`);
   return questions.map(mapBackendQuestion);
 }
@@ -122,10 +122,12 @@ export async function getQuestion(questionId: string): Promise<QuizQuestion> {
 }
 
 export async function createQuestion(data: {
-  topicId: string;
+  chapterId: string;
   question: string;
   options: string[];
   correctIndex: number;
+  subtitle?: string;
+  reason?: string;
 }): Promise<QuizQuestion> {
   const validation = validateQuestionPayload(data);
   if (!validation.valid) {
@@ -134,14 +136,31 @@ export async function createQuestion(data: {
 
   const backend = await apiFetch<BackendQuestion>("/api/questions", "POST", {
     id: `q-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    chapterId: data.topicId,
+    chapterId: data.chapterId,
     question_type: "mcq",
     title: data.question,
     options: data.options,
     answer: data.correctIndex,
+    ...(data.subtitle ? { subtitle: data.subtitle } : {}),
+    ...(data.reason ? { reason: data.reason } : {}),
   });
 
   return mapBackendQuestion(backend);
+}
+
+export async function updateQuestionsBulk(
+  ids: string[],
+  updates: { publish_status?: string }
+): Promise<{ matched: number; modified: number }> {
+  return apiFetch('/api/questions/bulk', 'PUT', { ids, updates });
+}
+
+export async function createQuestionsBulk(questions: { id: string; chapterId: string; title: string; options: string[]; answer: number }[]): Promise<{ created: QuizQuestion[]; errors: { question: string; error: string }[] }> {
+  const result = await apiFetch<{ created: any[]; errors: { question: string; error: string }[] }>("/api/questions/bulk", "POST", { questions });
+  return {
+    created: result.created.map(mapBackendQuestion),
+    errors: result.errors,
+  };
 }
 
 export async function updateQuestion(
@@ -150,6 +169,9 @@ export async function updateQuestion(
     question?: string;
     options?: string[];
     correctIndex?: number;
+    publish_status?: string;
+    subtitle?: string;
+    reason?: string;
   }
 ): Promise<QuizQuestion> {
   if (Object.keys(data).length === 0) {
@@ -161,10 +183,13 @@ export async function updateQuestion(
     throw new Error(`Invalid question update data: ${validation.errors.join(", ")}`);
   }
 
-  const payload: Partial<Pick<BackendQuestion, "title" | "options" | "answer">> = {};
+  const payload: Partial<Pick<BackendQuestion, "title" | "options" | "answer" | "publish_status" | "subtitle" | "reason">> = {};
   if (data.question !== undefined) payload.title = data.question;
   if (data.options !== undefined) payload.options = data.options;
   if (data.correctIndex !== undefined) payload.answer = data.correctIndex;
+  if (data.publish_status !== undefined) payload.publish_status = data.publish_status;
+  if (data.subtitle !== undefined) payload.subtitle = data.subtitle;
+  if (data.reason !== undefined) payload.reason = data.reason;
 
   const updated = await apiFetch<BackendQuestion>(`/api/questions/${questionId}`, "PUT", payload);
   return mapBackendQuestion(updated);

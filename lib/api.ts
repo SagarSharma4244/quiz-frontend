@@ -1,4 +1,4 @@
 export * from "./apiBase";
 export * from "./subjects";
-export * from "./topics";
+export * from "./chapters";
 export * from "./questions";
