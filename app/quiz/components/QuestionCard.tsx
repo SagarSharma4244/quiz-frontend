@@ -1,5 +1,5 @@
 import AnswerOption from "./AnswerOption";
-import ResultFeedback from "./ResultFeedback";
+import QuizProgressBar from "./QuizProgressBar";
 import DidYouKnowSection from "./DidYouKnowSection";
 import type { QuizQuestion } from "@/lib/api";
 
@@ -12,6 +12,7 @@ interface QuestionCardProps {
   onSelectOption: (index: number) => void;
   onSubmit: () => void;
   onNext: () => void;
+  chapterName?: string;
 }
 
 export default function QuestionCard({
@@ -23,15 +24,20 @@ export default function QuestionCard({
   onSelectOption,
   onSubmit,
   onNext,
+  chapterName,
 }: QuestionCardProps) {
-  const isCorrect = selectedOption === question.correctIndex;
-
   return (
-    <div className="rounded-2xl  p-8">
-      <div className="mb-8 text-center">
-        <p className="text-sm text-zinc-600 mb-4">
-          Question {currentIndex + 1}/{totalQuestions}
-        </p>
+    <>
+    {/* Right-side feedback panel */}
+    {showResult && (
+      <div className="fixed right-0 top-1/2 -translate-y-1/2 w-80 p-4 flex flex-col gap-4 z-50 transition-all duration-300">
+        <DidYouKnowSection />
+      </div>
+    )}
+
+    <div className="rounded-2xl pt-2 px-8 pb-8">
+      <QuizProgressBar currentIndex={currentIndex} totalQuestions={totalQuestions} chapterName={chapterName} showResult={showResult} />
+      <div className="mt-20 mb-8 text-center">
         <h2 className="text-2xl font-bold text-zinc-900 mb-2">{question.question}</h2>
         {/* <p className="text-zinc-600">Is this statement true or false?</p> */}
       </div>
@@ -53,18 +59,13 @@ export default function QuestionCard({
         ))}
       </div>
 
-      {/* Feedback Section */}
-      {showResult && <ResultFeedback isCorrect={isCorrect} />}
-
-      {/* Did you know? Section */}
-      {showResult && <DidYouKnowSection />}
 
       {/* Navigation */}
-      <div className="flex justify-end gap-4">
+      <div className="flex justify-center gap-4">
         {showResult ? (
           <button
             onClick={onNext}
-            className="rounded-lg bg-zinc-900 px-6 py-3 font-medium text-white hover:bg-zinc-800 transition-colors"
+            className="rounded-lg bg-zinc-900 px-12 py-3 font-medium text-white hover:bg-zinc-800 transition-colors"
           >
             Next →
           </button>
@@ -72,12 +73,13 @@ export default function QuestionCard({
           <button
             onClick={onSubmit}
             disabled={selectedOption === null}
-            className="rounded-lg bg-zinc-900 px-6 py-3 font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+            className="rounded-lg bg-zinc-900 px-12 py-3 font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
           >
             Submit
           </button>
         )}
       </div>
     </div>
+    </>
   );
 }

@@ -20,7 +20,7 @@ export default function AnswerOption({
   onSelect,
 }: AnswerOptionProps) {
   const getButtonClass = () => {
-    const base = "relative rounded-4xl  px-16 py-8 text-center font-medium transition-all";
+    const base = "relative rounded-xl border px-16 py-8 text-center font-medium transition-all";
 
     if (!showResult && !isSelected) {
       return `${base} border-zinc-300 bg-white text-zinc-900 hover:border-zinc-400 cursor-pointer`;
@@ -39,7 +39,7 @@ export default function AnswerOption({
     }
 
     if (showResult) {
-      return `${base} border-zinc-300 bg-zinc-50 text-zinc-600 opacity-50`;
+      return `${base} border-zinc-300 bg-white text-zinc-500`;
     }
 
     return base;
@@ -52,11 +52,7 @@ export default function AnswerOption({
       disabled={showResult}
       className={getButtonClass()}
     >
-      <div className="flex items-center justify-center gap-3">
-        {showResult && isCorrect && <span className="text-2xl">✓</span>}
-        {showResult && isUserAnswer && isWrong && <span className="text-2xl">✕</span>}
-        <span>{option}</span>
-      </div>
+      <span className="capitalize">{option}</span>
     </button>
   );
 }

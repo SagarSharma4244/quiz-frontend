@@ -1,12 +1,12 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import QuestionCard from "../components/QuestionCard";
 import QuizCompletion from "../components/QuizCompletion";
 import PageError from "../components/PageError";
 import { getTopic, getTopics, getQuestions, type Topic, type QuizQuestion } from "@/lib/api";
+
 
 interface QuizPageProps {
   params: Promise<{ topicId: string }>;
@@ -22,9 +22,7 @@ export default function QuizPage({ params }: QuizPageProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [score, setScore] = useState(0);
-
-  const router = useRouter();
+  const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
     getTopic(topicId)
@@ -48,8 +46,6 @@ export default function QuizPage({ params }: QuizPageProps) {
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
 
-  const currentTopicIndex = topics.findIndex((t) => t.id === topicId);
-  const nextTopic = currentTopicIndex >= 0 && currentTopicIndex + 1 < topics.length ? topics[currentTopicIndex + 1] : null;
 
   const handleOptionSelect = (index: number) => {
     if (showResult) return;
@@ -60,25 +56,16 @@ export default function QuizPage({ params }: QuizPageProps) {
     if (selectedOption === null || !currentQuestion) return;
 
     setShowResult(true);
-    if (selectedOption === currentQuestion.correctIndex) {
-      setScore((s) => s + 1);
-    }
   };
 
   const handleNext = () => {
     if (isLastQuestion) {
+      setIsComplete(true);
       return;
     }
     setCurrentIndex((i) => i + 1);
     setSelectedOption(null);
     setShowResult(false);
-  };
-
-  const handleRetake = () => {
-    setCurrentIndex(0);
-    setSelectedOption(null);
-    setShowResult(false);
-    setScore(0);
   };
 
   // Loading state
@@ -116,13 +103,6 @@ export default function QuizPage({ params }: QuizPageProps) {
     );
   }
 
-  const isQuizComplete = showResult && isLastQuestion;
-
-  const handleNextTopic = () => {
-    if (nextTopic) {
-      router.push(`/quiz/${nextTopic.id}`);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -134,13 +114,10 @@ export default function QuizPage({ params }: QuizPageProps) {
           <div className="mx-auto max-w-4xl px-8 py-8 ">
             {/* <ChapterProgress topicName={topic.name} /> */}
 
-            {isQuizComplete ? (
+            {isComplete ? (
               <QuizCompletion
-                score={score}
-                totalQuestions={questions.length}
-                onRetake={handleRetake}
-                onNextChapter={nextTopic ? handleNextTopic : undefined}
-                hasNextChapter={nextTopic !== null}
+                topics={topics}
+                currentTopicId={topicId}
               />
             ) : (
               <QuestionCard
@@ -152,6 +129,7 @@ export default function QuizPage({ params }: QuizPageProps) {
                 onSelectOption={handleOptionSelect}
                 onSubmit={handleSubmit}
                 onNext={handleNext}
+                chapterName={topic.name}
               />
             )}
           </div>
