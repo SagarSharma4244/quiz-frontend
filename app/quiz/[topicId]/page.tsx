@@ -118,6 +118,7 @@ export default function QuizPage({ params }: QuizPageProps) {
               <QuizCompletion
                 topics={topics}
                 currentTopicId={topicId}
+                chapterName={topic.name}
               />
             ) : (
               <QuestionCard
