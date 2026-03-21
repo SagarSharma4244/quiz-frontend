@@ -43,7 +43,7 @@ export default async function Home() {
                 <p className="mt-2 text-sm text-zinc-500">
                   {subject.description || "No description provided."}
                 </p>
-                <p className="mt-4 text-sm font-medium text-indigo-600">View topics →</p>
+                <p className="mt-4 text-sm font-medium text-indigo-600">View chapters →</p>
               </Link>
             </li>
           ))}

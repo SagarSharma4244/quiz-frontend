@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
-import { getSubject, getTopics } from "@/lib/api";
+import { getSubject, getChapters } from "@/lib/api";
 
 interface SubjectPageProps {
   params: Promise<{ subjectId: string }>;
@@ -11,12 +11,12 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
   const { subjectId } = await params;
 
   let subject;
-  let topics;
+  let chapters;
 
   try {
-    [subject, topics] = await Promise.all([
+    [subject, chapters] = await Promise.all([
       getSubject(subjectId),
-      getTopics(subjectId),
+      getChapters(subjectId),
     ]);
   } catch {
     notFound();
@@ -40,19 +40,22 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
                 )}
               </div>
 
-              {topics.length === 0 ? (
+              {chapters.length === 0 ? (
                 <p className="text-center text-zinc-500">No chapters available yet.</p>
               ) : (
                 <>
                   <p className="text-sm font-semibold text-zinc-500 uppercase tracking-wide mb-3">Chapters</p>
                   <div className="flex flex-col gap-3">
-                  {topics.map((topic) => (
+                  {chapters.map((chapter, index) => (
                     <Link
-                      key={topic.id}
-                      href={`/quiz/${topic.id}`}
-                      className="rounded-xl border border-zinc-200 bg-white px-6 py-4 font-medium text-zinc-800 transition-colors hover:border-zinc-400 hover:bg-zinc-50"
+                      key={chapter.id}
+                      href={`/quiz/${chapter.id}`}
+                      className="flex items-center gap-4 rounded-xl border border-zinc-200 bg-white px-6 py-4 font-medium text-zinc-800 transition-colors hover:border-zinc-400 hover:bg-zinc-50"
                     >
-                      {topic.name}
+                      <span className="flex-shrink-0 w-7 h-7 rounded-full bg-zinc-100 text-zinc-500 text-sm font-semibold flex items-center justify-center">
+                        {index + 1}
+                      </span>
+                      {chapter.name}
                     </Link>
                   ))}
                 </div>

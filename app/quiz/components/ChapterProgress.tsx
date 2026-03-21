@@ -1,15 +1,15 @@
 interface ChapterProgressProps {
-  topicName: string;
+  chapterName: string;
   currentChapter?: number;
 }
 
-export default function ChapterProgress({ topicName, currentChapter = 1 }: ChapterProgressProps) {
+export default function ChapterProgress({ chapterName, currentChapter = 1 }: ChapterProgressProps) {
   return (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-sm font-medium text-zinc-600">Course • Level 1</p>
-          <h1 className="text-2xl font-bold text-zinc-900 mt-1">{topicName}</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 mt-1">{chapterName}</h1>
         </div>
         <div className="text-right">
           <p className="text-xs text-zinc-500 mb-1">❤️ ❤️ ❤️ ❤️</p>

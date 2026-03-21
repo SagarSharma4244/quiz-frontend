@@ -1,13 +1,13 @@
 import Link from "next/link";
-import type { Topic } from "@/lib/api";
+import type { Chapter } from "@/lib/api";
 
 interface QuizCompletionProps {
-  topics: Topic[];
-  currentTopicId: string;
+  chapters: Chapter[];
+  currentChapterId: string;
   chapterName?: string;
 }
 
-export default function QuizCompletion({ topics, currentTopicId, chapterName }: QuizCompletionProps) {
+export default function QuizCompletion({ chapters, currentChapterId, chapterName }: QuizCompletionProps) {
   return (
     <div className="rounded-2xl pt-2 px-8 pb-8">
       {/* Header */}
@@ -28,12 +28,12 @@ export default function QuizCompletion({ topics, currentTopicId, chapterName }: 
 
       {/* Chapter list */}
       <div className="flex flex-col gap-3">
-        {topics.map((topic) => {
-          const isCurrent = topic.id === currentTopicId;
+        {chapters.map((chapter) => {
+          const isCurrent = chapter.id === currentChapterId;
           return (
             <Link
-              key={topic.id}
-              href={`/quiz/${topic.id}`}
+              key={chapter.id}
+              href={`/quiz/${chapter.id}`}
               className={`rounded-xl border px-6 py-4 font-medium transition-colors ${
                 isCurrent
                   ? "border-green-400 bg-green-50 text-green-800 pointer-events-none"
@@ -41,7 +41,7 @@ export default function QuizCompletion({ topics, currentTopicId, chapterName }: 
               }`}
             >
               <div className="flex items-center justify-between">
-                <span>{topic.name}</span>
+                <span>{chapter.name}</span>
                 {isCurrent && (
                   <span className="flex items-center gap-1 text-sm text-green-600 font-normal">
                     <span>✓</span> Completed
